@@ -1,35 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard</title>
-  <link rel="stylesheet" href="styles/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | SystemShapers IoT Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
-  <div class="auth-container">
-    <h1>Welcome!</h1>
-    <p id="status">Checking authentication...</p>
-    <button id="logoutBtn">Logout</button>
-  </div>
+    <div class="bg-animation">
+        <div class="bg-shape"></div>
+        <div class="bg-shape"></div>
+        <div class="bg-shape"></div>
+    </div>
 
-  <script type="module">
-    import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { auth } from './scripts/firebase-config.js';
+    <div class="dashboard-container">
+        <button class="theme-toggle" id="themeToggle">
+            <svg id="themeIcon" viewBox="0 0 24 24">
+                <path d="M12,18V6A6,6 0 0,1 18,12A6,6 0 0,1 12,18Z"/>
+            </svg>
+        </button>
 
-    onAuthStateChanged(auth, (user) => {
-      const statusEl = document.getElementById("status");
-      if (user) {
-        statusEl.textContent = `Logged in as: ${user.email}`;
-      } else {
-        statusEl.textContent = "Redirecting to login...";
-        setTimeout(() => window.location.href = "login.html", 1000);
-      }
-    });
+        <div class="logo-container">
+            <div class="logo">SS</div>
+            <h1>SystemShapers Dashboard</h1>
+            <p>Welcome to your IoT Hub</p>
+        </div>
 
-    document.getElementById("logoutBtn").addEventListener("click", () => {
-      signOut(auth);
-    });
-  </script>
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span id="userStatus">Checking authentication...</span>
+        </div>
+
+        <button class="btn-primary" id="logoutBtn" style="max-width: 200px; margin: 2rem auto 0;">
+            <span>Sign Out</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M16,17V14H9V10H16V7L21,12L16,17M14,2A2,2 0 0,1 16,4V6H14V4H5V20H14V18H16V20A2,2 0 0,1 14,22H5A2,2 0 0,1 3,20V4A2,2 0 0,1 5,2H14Z"/>
+            </svg>
+        </button>
+    </div>
+
+    <script src="scripts/theme.js"></script>
+    <script src="scripts/notifications.js"></script>
+    <script src="scripts/dashboard.js"></script>
 </body>
 </html>
