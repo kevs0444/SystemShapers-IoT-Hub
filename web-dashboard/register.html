@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register</title>
+  <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+  <div class="auth-container">
+    <h1>Register</h1>
+    <form id="registerForm">
+      <input type="email" id="email" placeholder="Email" required>
+      <input type="password" id="password" placeholder="Password (min 6 chars)" required>
+      <button type="submit">Register</button>
+    </form>
+    <p>Already have an account? <a href="login.html">Login</a></p>
+    <p id="error" class="error"></p>
+  </div>
+
+  <script type="module">
+    import { register } from './scripts/auth.js';
+    
+    document.getElementById("registerForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById("error");
+      try {
+        await register(
+          document.getElementById("email").value,
+          document.getElementById("password").value
+        );
+      } catch (error) {
+        errorEl.textContent = error.message;
+      }
+    });
+  </script>
+</body>
+</html>
