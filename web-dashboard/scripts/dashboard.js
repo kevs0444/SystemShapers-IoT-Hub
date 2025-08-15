@@ -1,9 +1,5 @@
 // Dashboard page logic
-import { 
-    signOut, 
-    onAuthStateChanged 
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { auth } from './firebase-config.js';
+// Using global Firebase objects instead of ES6 imports
 
 class DashboardManager {
     constructor() {
@@ -21,41 +17,59 @@ class DashboardManager {
     monitorAuthState() {
         const userStatus = document.getElementById('userStatus');
         
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                // User is signed in
-                const email = user.email;
-                const displayName = user.displayName || email.split('@')[0];
-                
-                if (userStatus) {
-                    userStatus.textContent = `Logged in as: ${email}`;
-                }
-
-                // Show success notification on first load
-                if (!sessionStorage.getItem('dashboardLoaded')) {
-                    sessionStorage.setItem('dashboardLoaded', 'true');
-                    window.notifications.success(
-                        'Welcome to SystemShapers!', 
-                        `Hello ${displayName}, you're successfully logged in.`
-                    );
-                }
-
+        // Wait for Firebase to be initialized
+        const checkAuth = () => {
+            if (window.firebaseAuth) {
+                firebase.auth().onAuthStateChanged((user) => {
+                    this.handleAuthStateChange(user, userStatus);
+                });
             } else {
-                // User is signed out, redirect to login
-                if (userStatus) {
-                    userStatus.textContent = "Redirecting to login...";
-                }
-                
-                window.notifications.info(
-                    'Session Expired', 
-                    'Please sign in to access your dashboard.'
-                );
-
-                setTimeout(() => {
-                    window.location.href = 'login.html';
-                }, 1000);
+                setTimeout(checkAuth, 100);
             }
-        });
+        };
+        checkAuth();
+    }
+
+    handleAuthStateChange(user, userStatus) {
+        if (user) {
+            // User is signed in
+            const email = user.email;
+            const displayName = user.displayName || email.split('@')[0];
+            
+            // Update user info in header
+            const userName = document.getElementById('userName');
+            if (userName) {
+                userName.textContent = displayName;
+            }
+            
+            if (userStatus) {
+                userStatus.textContent = email;
+            }
+
+            // Show success notification on first load
+            if (!sessionStorage.getItem('dashboardLoaded')) {
+                sessionStorage.setItem('dashboardLoaded', 'true');
+                window.notifications.success(
+                    'Welcome to SystemShapers!', 
+                    `Hello ${displayName}, you're successfully logged in.`
+                );
+            }
+
+        } else {
+            // User is signed out, redirect to login
+            if (userStatus) {
+                userStatus.textContent = "Redirecting to login...";
+            }
+            
+            window.notifications.info(
+                'Session Expired', 
+                'Please sign in to access your dashboard.'
+            );
+
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 1000);
+        }
     }
 
     setupLogoutButton() {
@@ -73,7 +87,7 @@ class DashboardManager {
         this.setButtonLoading(logoutBtn, true);
 
         try {
-            await signOut(auth);
+            await firebase.auth().signOut();
             
             // Clear session data
             sessionStorage.clear();

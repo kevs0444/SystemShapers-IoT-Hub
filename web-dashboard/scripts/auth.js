@@ -1,21 +1,41 @@
-// Authentication logic for login and register pages
-import { 
-    signInWithEmailAndPassword, 
-    createUserWithEmailAndPassword,
-    onAuthStateChanged 
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { auth } from './firebase-config.js';
-
+// Authentication logic using Firebase compat SDK
 class AuthManager {
     constructor() {
+        this.auth = null;
         this.init();
     }
 
     init() {
+        // Wait for Firebase to be initialized
+        const checkFirebaseInit = setInterval(() => {
+            if (window.firebase && firebase.auth) {
+                this.auth = firebase.auth();
+                clearInterval(checkFirebaseInit);
+                this.setupAuthManager();
+            }
+        }, 100);
+
+        // Timeout after 10 seconds
+        setTimeout(() => {
+            clearInterval(checkFirebaseInit);
+            if (!this.auth) {
+                console.error('Firebase failed to initialize');
+                if (window.notifications) {
+                    window.notifications.error('Initialization Error', 'Failed to connect to authentication service. Please refresh and try again.');
+                }
+            }
+        }, 10000);
+    }
+
+    setupAuthManager() {
+        console.log('Setting up auth manager...');
+        
         // Check which page we're on and initialize accordingly
-        if (window.location.pathname.includes('login.html') || window.location.pathname === '/') {
+        const currentPage = window.location.pathname;
+        
+        if (currentPage.includes('login.html') || currentPage === '/' || currentPage === '/login.html') {
             this.initLoginPage();
-        } else if (window.location.pathname.includes('register.html')) {
+        } else if (currentPage.includes('register.html')) {
             this.initRegisterPage();
         }
 
@@ -24,6 +44,7 @@ class AuthManager {
     }
 
     initLoginPage() {
+        console.log('Initializing login page...');
         const loginForm = document.getElementById('loginForm');
         if (loginForm) {
             loginForm.addEventListener('submit', (e) => this.handleLogin(e));
@@ -31,6 +52,7 @@ class AuthManager {
     }
 
     initRegisterPage() {
+        console.log('Initializing register page...');
         const registerForm = document.getElementById('registerForm');
         if (registerForm) {
             registerForm.addEventListener('submit', (e) => this.handleRegister(e));
@@ -39,10 +61,13 @@ class AuthManager {
 
     async handleLogin(event) {
         event.preventDefault();
+        console.log('Login attempt started...');
         
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const loginBtn = document.getElementById('loginBtn');
+
+        console.log('Login credentials:', { email: email, passwordLength: password.length });
 
         // Validate inputs
         if (!email || !password) {
@@ -50,16 +75,24 @@ class AuthManager {
             return;
         }
 
+        if (!this.isValidEmail(email)) {
+            window.notifications.error('Invalid Email', 'Please enter a valid email address.');
+            return;
+        }
+
         // Show loading state
         this.setButtonLoading(loginBtn, true);
 
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            console.log('Attempting Firebase sign in...');
+            const userCredential = await this.auth.signInWithEmailAndPassword(email, password);
             const user = userCredential.user;
+            
+            console.log('Login successful:', user.uid);
             
             window.notifications.success(
                 'Login Successful', 
-                `Welcome back! Redirecting to dashboard...`
+                `Welcome back, ${user.email}! Redirecting to dashboard...`
             );
 
             // Redirect to dashboard after short delay
@@ -69,7 +102,10 @@ class AuthManager {
 
         } catch (error) {
             console.error('Login error:', error);
-            const errorInfo = window.getFirebaseErrorMessage(error.code);
+            console.error('Error code:', error.code);
+            console.error('Error message:', error.message);
+            
+            const errorInfo = this.getFirebaseErrorMessage(error.code);
             window.notifications.error(errorInfo.title, errorInfo.message);
         } finally {
             this.setButtonLoading(loginBtn, false);
@@ -78,6 +114,7 @@ class AuthManager {
 
     async handleRegister(event) {
         event.preventDefault();
+        console.log('Registration attempt started...');
         
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
@@ -86,6 +123,11 @@ class AuthManager {
         // Validate inputs
         if (!email || !password) {
             window.notifications.error('Missing Information', 'Please fill in all fields.');
+            return;
+        }
+
+        if (!this.isValidEmail(email)) {
+            window.notifications.error('Invalid Email', 'Please enter a valid email address.');
             return;
         }
 
@@ -98,8 +140,11 @@ class AuthManager {
         this.setButtonLoading(registerBtn, true);
 
         try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            console.log('Attempting Firebase registration...');
+            const userCredential = await this.auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
+            
+            console.log('Registration successful:', user.uid);
             
             window.notifications.success(
                 'Account Created Successfully', 
@@ -113,7 +158,7 @@ class AuthManager {
 
         } catch (error) {
             console.error('Registration error:', error);
-            const errorInfo = window.getFirebaseErrorMessage(error.code);
+            const errorInfo = this.getFirebaseErrorMessage(error.code);
             window.notifications.error(errorInfo.title, errorInfo.message);
         } finally {
             this.setButtonLoading(registerBtn, false);
@@ -121,23 +166,35 @@ class AuthManager {
     }
 
     monitorAuthState() {
-        onAuthStateChanged(auth, (user) => {
+        if (!this.auth) return;
+
+        this.auth.onAuthStateChanged((user) => {
             const currentPage = window.location.pathname;
+            console.log('Auth state changed:', { user: user ? user.email : null, currentPage });
             
             if (user) {
                 // User is signed in
+                console.log('User is authenticated:', user.email);
                 if (currentPage.includes('login.html') || currentPage.includes('register.html')) {
+                    console.log('Redirecting to dashboard...');
                     // If on auth pages, redirect to dashboard
                     window.location.href = 'index.html';
                 }
             } else {
                 // User is signed out
-                if (currentPage.includes('index.html') || currentPage === '/') {
+                console.log('User is not authenticated');
+                if (currentPage.includes('index.html') || currentPage === '/' || currentPage === '') {
+                    console.log('Redirecting to login...');
                     // If on dashboard, redirect to login
                     window.location.href = 'login.html';
                 }
             }
         });
+    }
+
+    isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
     }
 
     setButtonLoading(button, loading) {
@@ -177,9 +234,64 @@ class AuthManager {
             if (svg) svg.style.display = 'block';
         }
     }
+
+    getFirebaseErrorMessage(errorCode) {
+        const errorMessages = {
+            'auth/user-not-found': {
+                title: 'User Not Found',
+                message: 'No account found with this email address. Please check your email or create a new account.'
+            },
+            'auth/wrong-password': {
+                title: 'Invalid Password',
+                message: 'The password you entered is incorrect. Please try again or reset your password.'
+            },
+            'auth/invalid-email': {
+                title: 'Invalid Email',
+                message: 'Please enter a valid email address.'
+            },
+            'auth/user-disabled': {
+                title: 'Account Disabled',
+                message: 'This account has been disabled. Please contact support for assistance.'
+            },
+            'auth/email-already-in-use': {
+                title: 'Email Already Registered',
+                message: 'An account with this email already exists. Please sign in or use a different email.'
+            },
+            'auth/weak-password': {
+                title: 'Weak Password',
+                message: 'Password should be at least 6 characters long and contain a mix of letters and numbers.'
+            },
+            'auth/operation-not-allowed': {
+                title: 'Operation Not Allowed',
+                message: 'Email/password accounts are not enabled. Please contact support.'
+            },
+            'auth/invalid-credential': {
+                title: 'Invalid Credentials',
+                message: 'The email or password you entered is incorrect. Please check and try again.'
+            },
+            'auth/too-many-requests': {
+                title: 'Too Many Attempts',
+                message: 'Too many failed login attempts. Please try again later or reset your password.'
+            },
+            'auth/network-request-failed': {
+                title: 'Network Error',
+                message: 'Unable to connect to our servers. Please check your internet connection and try again.'
+            },
+            'auth/popup-closed-by-user': {
+                title: 'Sign-in Cancelled',
+                message: 'The sign-in process was cancelled. Please try again.'
+            }
+        };
+
+        return errorMessages[errorCode] || {
+            title: 'Authentication Error',
+            message: `An unexpected error occurred: ${errorCode}. Please try again later.`
+        };
+    }
 }
 
 // Initialize auth manager when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing AuthManager...');
     new AuthManager();
 });
