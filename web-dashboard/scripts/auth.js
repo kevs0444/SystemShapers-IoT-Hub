@@ -134,6 +134,7 @@ class AuthManager {
         } catch (error) {
             const errorInfo = this.getFirebaseErrorMessage(error.code);
             window.notifications.error(errorInfo.title, errorInfo.message);
+            console.error(error); // Add this to see the real error in the console
         }
     }
 
