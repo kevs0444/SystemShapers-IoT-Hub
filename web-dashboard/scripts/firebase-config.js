@@ -8,22 +8,3 @@ const firebaseConfig = {
   measurementId: "G-R0SX3TS6JC"
 };
 
-let auth;
-
-function initializeFirebase() {
-    try {
-        const app = firebase.initializeApp(firebaseConfig);
-        auth = firebase.auth();
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-        window.firebaseAuth = auth;
-        console.log('Firebase initialized successfully');
-        return auth;
-    } catch (error) {
-        console.error('Firebase initialization error:', error);
-        window.notifications?.error('Firebase Error', error.message || 'Could not initialize Firebase.');
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    initializeFirebase();
-});
