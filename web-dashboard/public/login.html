@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SystemShapers IoT Hub - Login</title>
+  <link rel="stylesheet" href="../styles/login.css">
+  <script type="module" src="../scripts/firebase-config.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="login-box">
+      <h2>SystemShapers IoT Hub</h2>
+
+      <div class="input-group">
+        <label>Email</label>
+        <input type="email" id="email" placeholder="Enter your email" required>
+      </div>
+
+      <div class="input-group password-group">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="Enter your password" required>
+        <span class="toggle-password" onclick="togglePassword()">👁️</span>
+      </div>
+
+      <button onclick="login()">Login</button>
+
+      <!-- Google Sign In Button -->
+      <button class="google-btn" onclick="googleLogin()">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
+        Sign in with Google
+      </button>
+
+      <div class="options">
+        <a href="#" onclick="forgotPassword()">Forgot Password?</a>
+      </div>
+
+      <div class="options">
+        <p>Don’t have an account? <a href="register.html">Register</a></p>
+      </div>
+
+      <div class="theme-toggle" onclick="toggleTheme()">
+        <span id="theme-icon">🌙</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="../scripts/auth.js" type="module"></script>
+</body>
+</html>

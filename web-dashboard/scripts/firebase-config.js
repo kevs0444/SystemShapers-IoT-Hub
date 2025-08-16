@@ -1,3 +1,6 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyCsjVZk2SRofOnlKQVqe1eB4Nvh3JNmqbY",
   authDomain: "systemshapers-iot-hub.firebaseapp.com",
@@ -8,3 +11,5 @@ const firebaseConfig = {
   measurementId: "G-R0SX3TS6JC"
 };
 
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
