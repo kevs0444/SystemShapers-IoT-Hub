@@ -20,15 +20,12 @@ function initializeFirebase() {
         // Get Auth instance
         auth = firebase.auth();
         
+        window.firebaseAuth = auth; // <-- move this here
+        
         console.log('Firebase initialized successfully');
         return auth;
     } catch (error) {
-        console.error('Firebase initialization error:', error);
-        // Show error to user
-        if (window.notifications) {
-            window.notifications.error('Configuration Error', 'Firebase configuration is incorrect. Please check your settings.');
-        }
-        return null;
+        // ...existing code...
     }
 }
 

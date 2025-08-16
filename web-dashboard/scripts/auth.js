@@ -288,6 +288,53 @@ class AuthManager {
             message: `An unexpected error occurred: ${errorCode}. Please try again later.`
         };
     }
+
+    // ...existing code...
+setupAuthManager() {
+    // ...existing code...
+    if (currentPage.includes('login.html') || currentPage === '/' || currentPage === '/login.html') {
+        this.initLoginPage();
+        this.initForgotPassword(); // <-- add this
+    }
+    // ...existing code...
+}
+
+initForgotPassword() {
+    const forgotLink = document.getElementById('forgotPasswordLink');
+    const resetModal = document.getElementById('resetModal');
+    const resetForm = document.getElementById('resetForm');
+    if (forgotLink && resetModal) {
+        forgotLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            resetModal.style.display = 'block';
+        });
+    }
+    if (resetForm) {
+        resetForm.addEventListener('submit', (e) => this.handlePasswordReset(e));
+    }
+}
+
+    async handlePasswordReset(event) {
+        event.preventDefault();
+        const email = document.getElementById('resetEmail').value.trim();
+        const resetBtn = document.getElementById('resetBtn');
+        if (!email) {
+            window.notifications.error('Missing Email', 'Please enter your email address.');
+            return;
+        }
+        this.setButtonLoading(resetBtn, true);
+        try {
+            await this.auth.sendPasswordResetEmail(email);
+            window.notifications.success('Reset Email Sent', 'Check your email for a password reset link.');
+            document.getElementById('resetModal').style.display = 'none';
+        } catch (error) {
+            const errorInfo = this.getFirebaseErrorMessage(error.code);
+            window.notifications.error(errorInfo.title, errorInfo.message);
+        } finally {
+            this.setButtonLoading(resetBtn, false);
+        }
+    }
+// ...existing code...
 }
 
 // Initialize auth manager when DOM is loaded

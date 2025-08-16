@@ -56,7 +56,21 @@
 
         <div class="auth-footer">
             <p>New to SystemShapers? <a href="register.html">Create account</a></p>
-            <a href="#" class="text-link">Forgot your password?</a>
+            <a href="#" class="text-link" id="forgotPasswordLink">Forgot your password?</a>
+        </div>
+
+        <div id="resetModal" style="display:none;" class="auth-container">
+            <h2>Reset Password</h2>
+            <form id="resetForm">
+                <div class="input-group">
+                    <input type="email" id="resetEmail" required>
+                    <label for="resetEmail">Enter your email</label>
+                </div>
+                <button type="submit" class="btn-primary" id="resetBtn">
+                    <span>Send Reset Link</span>
+                </button>
+            </form>
+            <button onclick="document.getElementById('resetModal').style.display='none'" class="btn-primary" style="margin-top:1rem;">Cancel</button>
         </div>
     </div>
 
@@ -66,7 +80,7 @@
     
     <!-- Your scripts -->
     <script src="scripts/theme.js"></script>
-    <script src="scripts/notifications.js"></script>
+    <script src="scripts/notification.js"></script>
     <script src="scripts/firebase-config.js"></script>
     <script src="scripts/auth.js"></script>
 </body>
