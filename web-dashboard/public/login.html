@@ -7,14 +7,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Fixed CSS path -->
   <link rel="stylesheet" href="../styles/login.css">
+  <!-- Include theme script first -->
+  <script src="../scripts/theme.js" defer></script>
 </head>
 <body data-theme="dark">
   <div class="container">
     <div class="login-box">
-      <div class="theme-toggle" onclick="toggleTheme()">
-        <span id="theme-icon">🌙</span>
+      <!-- Remove onclick handler here -->
+      <div class="theme-toggle" id="themeToggle">
+        <svg id="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
       </div>
 
       <div class="brand">
@@ -33,23 +37,33 @@
         <label for="password">Password</label>
         <div class="input-wrapper">
           <input type="password" id="password" placeholder="Enter your password" required>
-          <span class="toggle-password" onclick="togglePassword('password')">👁️</span>
+          <span class="toggle-password" id="togglePasswordBtn" onclick="togglePassword()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </span>
         </div>
       </div>
 
-      <button class="btn-primary" onclick="login()">Sign In</button>
+      <button class="btn-primary" id="loginBtn">Sign In</button>
 
       <div class="divider">
         <span>or continue with</span>
       </div>
 
-      <button class="btn-google" onclick="googleLogin()">
+      <button class="btn-google" id="googleLoginBtn">
         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
         Sign in with Google
       </button>
+      <script>
+        document.getElementById('googleLoginBtn').addEventListener('click', () => {
+          googleLogin().catch(error => alert(error.message));
+        });
+      </script>
 
       <div class="options">
-        <a href="#" onclick="forgotPassword()">Forgot your password?</a>
+        <a href="forgot-password.html" id="forgotPasswordLink">Forgot your password?</a>
       </div>
 
       <div class="options">

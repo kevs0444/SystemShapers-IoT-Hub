@@ -1,10 +1,13 @@
 import { auth } from "./firebase-config.js";
-import { 
-  signInWithEmailAndPassword, 
+import {
+  signInWithEmailAndPassword,
   sendPasswordResetEmail,
-  GoogleAuthProvider, 
+  GoogleAuthProvider,
   signInWithPopup,
-  createUserWithEmailAndPassword
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  signOut,
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
 
@@ -19,7 +22,16 @@ async function login() {
   }
 
   try {
-    await signInWithEmailAndPassword(auth, email, password);
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    
+    // Check if email is verified
+    if (!user.emailVerified) {
+      alert("Please verify your email address before signing in. Check your inbox for the verification email.");
+      await signOut(auth);
+      return;
+    }
+    
     alert("Login successful!");
     window.location.href = "dashboard.html";
   } catch (error) {
@@ -61,9 +73,16 @@ async function register() {
   }
 
   try {
-    await createUserWithEmailAndPassword(auth, email, password);
-    alert("Registration successful!");
-    window.location.href = "dashboard.html";
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    
+    // Send email verification
+    await sendEmailVerification(user);
+    alert("Registration successful! Please check your email to verify your account before signing in.");
+    
+    // Sign out the user until they verify their email
+    await signOut(auth);
+    window.location.href = "login.html";
   } catch (error) {
     console.error("Registration error:", error);
     alert(error.message);
@@ -99,34 +118,100 @@ window.forgotPassword = forgotPassword;
 
 
 // ---------------- TOGGLE PASSWORD VISIBILITY ----------------
-function togglePassword(id) {
-  const passField = document.getElementById(id);
+// Password visibility toggle
+function togglePassword() {
+  const passField = document.getElementById('password');
   if (passField) {
-    passField.type = passField.type === "password" ? "text" : "password";
-    
-    // Find the toggle button (eye icon) and update it
-    const toggleBtn = passField.parentElement.querySelector('.toggle-password');
+    passField.type = passField.type === 'password' ? 'text' : 'password';
+    const toggleBtn = document.getElementById('togglePasswordBtn');
     if (toggleBtn) {
-      toggleBtn.textContent = passField.type === "password" ? "👁️" : "🙈";
+      toggleBtn.textContent = passField.type === 'password' ? '👁️' : '🙈';
     }
   }
 }
 window.togglePassword = togglePassword;
 
+// Forgot password handler for login page
+document.getElementById('forgotPasswordLink')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  window.location.href = 'forgot-password.html';
+});
 
-// ---------------- THEME TOGGLE ----------------
-function toggleTheme() {
-  document.body.classList.toggle("dark");
-  const currentTheme = document.body.getAttribute('data-theme');
-  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-  document.body.setAttribute('data-theme', newTheme);
+// Forgot password page functionality
+document.getElementById('resetPasswordBtn')?.addEventListener('click', async () => {
+  const email = document.getElementById('reset-email')?.value;
+  const errorElement = document.getElementById('email-error');
+  const successElement = document.getElementById('success-message');
+  const resetBtn = document.getElementById('resetPasswordBtn');
   
-  const icon = document.getElementById("theme-icon");
-  if (icon) {
-    icon.textContent = newTheme === "dark" ? "🌙" : "☀️";
+  if (!email) {
+    if (errorElement) {
+      errorElement.textContent = 'Please enter your email address';
+      errorElement.style.display = 'block';
+    }
+    return;
   }
-}
-window.toggleTheme = toggleTheme;
+  
+  // Validate email format
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailPattern.test(email)) {
+    if (errorElement) {
+      errorElement.textContent = 'Please enter a valid email address';
+      errorElement.style.display = 'block';
+    }
+    return;
+  }
+  
+  // Hide error message
+  if (errorElement) errorElement.style.display = 'none';
+  
+  // Show loading state
+  resetBtn.textContent = 'Sending...';
+  resetBtn.disabled = true;
+  
+  try {
+    await sendPasswordResetEmail(auth, email);
+    
+    // Show success message
+    if (successElement) {
+      successElement.style.display = 'block';
+    }
+    
+    // Hide the form
+    document.querySelector('.input-group').style.display = 'none';
+    resetBtn.style.display = 'none';
+    
+  } catch (error) {
+    console.error("Password reset error:", error);
+    
+    // Reset button state
+    resetBtn.textContent = 'Send Reset Link';
+    resetBtn.disabled = false;
+    
+    // Show error message
+    if (errorElement) {
+      errorElement.textContent = error.message || 'Failed to send reset email. Please try again.';
+      errorElement.style.display = 'block';
+    }
+  }
+});
+
+// Resend link functionality
+document.getElementById('resendLink')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  
+  // Reset the form
+  document.querySelector('.input-group').style.display = 'block';
+  document.getElementById('resetPasswordBtn').style.display = 'block';
+  document.getElementById('success-message').style.display = 'none';
+  
+  // Reset button state
+  const resetBtn = document.getElementById('resetPasswordBtn');
+  resetBtn.textContent = 'Send Reset Link';
+  resetBtn.disabled = false;
+});
+
+
 
 
 // ---------------- GOOGLE SIGN-IN ----------------
@@ -230,3 +315,45 @@ function validatePasswordMatch() {
   }
 }
 window.validatePasswordMatch = validatePasswordMatch;
+// ---------------- AUTHENTICATION STATE MANAGEMENT ----------------
+// Check authentication state and redirect if needed
+onAuthStateChanged(auth, (user) => {
+  const currentPage = window.location.pathname.split('/').pop();
+  
+  if (user && user.emailVerified) {
+    // User is signed in and verified
+    if (currentPage === 'login.html' || currentPage === 'register.html' || currentPage === 'forgot-password.html') {
+      window.location.href = 'dashboard.html';
+    }
+    
+    // Update welcome message on dashboard
+    if (currentPage === 'dashboard.html') {
+      const welcomeMessage = document.getElementById('welcomeMessage');
+      if (welcomeMessage) {
+        welcomeMessage.textContent = `Welcome back, ${user.email}!`;
+      }
+    }
+  } else {
+    // User is not signed in or not verified
+    if (currentPage === 'dashboard.html') {
+      window.location.href = 'login.html';
+    }
+  }
+});
+
+// Sign out functionality
+async function signOutUser() {
+  try {
+    await signOut(auth);
+    window.location.href = 'login.html';
+  } catch (error) {
+    console.error('Sign out error:', error);
+    alert('Error signing out. Please try again.');
+  }
+}
+
+// Add event listener for sign out button
+document.getElementById('signOutBtn')?.addEventListener('click', signOutUser);
+
+// Add event listeners for login and register buttons
+document.getElementById('loginBtn')?.addEventListener('click', login);
